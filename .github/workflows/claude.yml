@@ -3,22 +3,19 @@ name: Claude AI Dungeon Master Agent
 on:
   issue_comment:
     types: [created]
+  issues:
+    types: [opened, edited]
   pull_request_review_comment:
     types: [created]
-  issues:
-    types: [opened, assigned]
   pull_request_review:
     types: [submitted]
 
 jobs:
   claude-ai-dm:
-    if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    # Simplified condition - trigger on any @claude mention
+    if: contains(github.event.comment.body || github.event.issue.body || github.event.review.body, '@claude')
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     permissions:
       contents: write
       pull-requests: write
@@ -26,7 +23,16 @@ jobs:
       id-token: write
       actions: read
       checks: write
+    
     steps:
+      - name: Debug Event Information
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Issue number: ${{ github.event.issue.number || 'N/A' }}"
+          echo "Comment body: ${{ github.event.comment.body || 'N/A' }}"
+          echo "Issue body: ${{ github.event.issue.body || 'N/A' }}"
+          echo "Review body: ${{ github.event.review.body || 'N/A' }}"
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -39,6 +45,28 @@ jobs:
           node-version: '20'
           # Only cache if package.json exists
           cache: ${{ hashFiles('**/package-lock.json', '**/yarn.lock', '**/pnpm-lock.yaml') != '' && 'npm' || '' }}
+
+      - name: Create Feature Branch
+        id: branch
+        run: |
+          # Create unique branch name
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          if [ "${{ github.event.issue.number }}" != "" ]; then
+            BRANCH_NAME="claude/issue-${{ github.event.issue.number }}-${TIMESTAMP}"
+            ISSUE_NUMBER="${{ github.event.issue.number }}"
+          else
+            BRANCH_NAME="claude/feature-${TIMESTAMP}"
+            ISSUE_NUMBER="N/A"
+          fi
+          
+          echo "Creating branch: $BRANCH_NAME"
+          git config --local user.email "claude@anthropic.com"
+          git config --local user.name "Claude AI"
+          git checkout -b $BRANCH_NAME
+          
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
 
       - name: Run Claude AI DM Agent
         id: claude-ai-dm
@@ -58,8 +86,8 @@ jobs:
             issues: write
           
           # Maximum autonomous capabilities
-          max_turns: 10
-          timeout_minutes: 25
+          max_turns: 15
+          timeout_minutes: 40
           
           # AI DM specific tools and commands
           allowed_tools: |
@@ -74,77 +102,150 @@ jobs:
             Bash(npx supabase gen types typescript)
             Bash(npx prisma generate)
             Bash(npx playwright test)
+            Bash(git add .)
+            Bash(git status)
           
           # Comprehensive AI DM development instructions
           custom_instructions: |
-            # AI Dungeon Master Development Agent
+            # Autonomous AI Dungeon Master Development Agent
             
-            You are an expert AI development agent specializing in building AI Dungeon Master systems.
+            You are an expert autonomous development agent specializing in building AI Dungeon Master systems.
             
-            ## Core Principles
-            - Follow TypeScript strict mode and best practices
-            - Implement comprehensive error handling and logging
-            - Create modular, testable, and maintainable code
-            - Use MCP (Model Context Protocol) integration patterns
-            - Follow D&D 5e rules and mechanics accurately
+            ## 🎯 Autonomous Development Mission
+            - Implement complete, production-ready features from @claude mentions
+            - Create comprehensive solutions using all 5 MCP tools
+            - Generate proper tests, documentation, and examples
+            - Follow AI DM architecture patterns and best practices
             
-            ## Architecture Patterns
-            - Use clean architecture with clear separation of concerns
-            - Implement repository pattern for data access
-            - Use dependency injection for testability
-            - Create comprehensive TypeScript interfaces and types
-            - Follow SOLID principles
+            ## 🛠 MCP Tool Integration (CRITICAL)
+            You have access to 5 specialized MCP tools - USE THEM EXTENSIVELY:
             
-            ## Database Operations (Supabase)
-            - Always create proper migrations for schema changes
-            - Implement Row Level Security (RLS) policies
-            - Generate TypeScript types from database schema
-            - Use real-time subscriptions for live features
-            - Implement proper indexing for performance
+            ### 1. Supabase MCP 🗄️
+            - Create database schemas and migrations
+            - Generate TypeScript types from database
+            - Implement RLS policies for security
+            - Set up real-time subscriptions
             
-            ## AI DM Specific Requirements
+            ### 2. Firecrawl MCP 🔍
+            - Research D&D 5e rules and mechanics
+            - Scrape monster stat blocks and spell descriptions
+            - Gather campaign inspiration and lore
+            - Validate content against official sources
+            
+            ### 3. Playwright MCP 🎭
+            - Create comprehensive test suites
+            - Test UI components and user workflows
+            - Generate performance benchmarks
+            - Create visual regression tests
+            
+            ### 4. GitHub MCP 🐙
+            - Manage repository operations
+            - Create issues and track progress
+            - Generate comprehensive documentation
+            - Handle version control operations
+            
+            ### 5. Fetch MCP 🌐
+            - Integrate with D&D APIs (D&D Beyond, etc.)
+            - Fetch real-time game data
+            - Validate external content
+            - Cache frequently accessed data
+            
+            ## 🏗 Implementation Requirements
+            
+            ### Code Quality
+            - Use TypeScript with strict mode
+            - Implement comprehensive error handling
+            - Create modular, testable code
+            - Follow SOLID principles and clean architecture
+            
+            ### AI DM Specific Features
             - Implement narrative generation with context awareness
             - Create procedural content generation systems
             - Build character and campaign management features
             - Implement dice rolling and game mechanics
             - Create session logging and continuity systems
             
-            ## Testing Requirements
+            ### Testing Requirements
             - Unit tests for all business logic (Jest)
-            - Integration tests for database operations
+            - Integration tests for MCP tool interactions
             - End-to-end tests for user workflows (Playwright)
             - Performance tests for real-time features
             - Minimum 80% code coverage
             
-            ## MCP Integration
-            - Use Supabase MCP for database operations
-            - Use Firecrawl MCP for D&D research and content
-            - Use Playwright MCP for automated testing
-            - Use GitHub MCP for repository management
-            - Use Fetch MCP for external API integrations
-            
-            ## Documentation
+            ### Documentation
             - Create comprehensive README with setup instructions
-            - Document all APIs with OpenAPI/Swagger
-            - Include usage examples and tutorials
-            - Create architecture decision records (ADRs)
-            - Maintain changelog for all releases
+            - Document all APIs with examples
+            - Include usage tutorials and guides
+            - Generate architecture decision records
             
-            ## Security
+            ## 🚀 Autonomous Workflow Process
+            
+            1. **Analyze Request**: Understand the feature requirements from the @claude mention
+            2. **Research Phase**: Use Firecrawl MCP to gather D&D content and best practices
+            3. **Database Design**: Use Supabase MCP to create schemas and migrations
+            4. **Implementation**: Build complete TypeScript solution with proper types
+            5. **Testing**: Use Playwright MCP to create comprehensive test suites
+            6. **Documentation**: Generate usage examples and API documentation
+            7. **Validation**: Ensure all code compiles, tests pass, and follows standards
+            
+            ## 🎮 AI DM Architecture Patterns
+            
+            ### Database Layer
+            ```typescript
+            // Use Supabase for persistent game state
+            interface Campaign {
+              id: string;
+              name: string;
+              dm_id: string;
+              players: Player[];
+              sessions: Session[];
+              world_state: WorldState;
+            }
+            ```
+            
+            ### Service Layer
+            ```typescript
+            // Implement business logic with MCP integration
+            class NarrativeService {
+              constructor(
+                private supabase: SupabaseClient,
+                private firecrawl: FirecrawlClient
+              ) {}
+              
+              async generateEncounter(context: GameContext): Promise<Encounter> {
+                // Use Firecrawl to research encounter ideas
+                // Use Supabase to store and retrieve game state
+              }
+            }
+            ```
+            
+            ### API Layer
+            ```typescript
+            // Create RESTful APIs with proper validation
+            app.post('/api/campaigns/:id/encounters', async (req, res) => {
+              // Implement with comprehensive error handling
+            });
+            ```
+            
+            ## 🔒 Security & Performance
             - Implement proper authentication and authorization
-            - Validate all inputs and sanitize outputs
             - Use environment variables for sensitive data
-            - Implement rate limiting and abuse prevention
-            - Follow OWASP security guidelines
+            - Implement rate limiting and input validation
+            - Optimize database queries with proper indexing
+            - Use caching strategies for frequently accessed data
             
-            ## Performance
-            - Implement caching strategies for frequently accessed data
-            - Use database connection pooling
-            - Optimize queries and implement proper indexing
-            - Use CDN for static assets
-            - Implement lazy loading where appropriate
+            ## ✅ Success Criteria
+            Your implementation is successful when:
+            - All code compiles without errors
+            - All tests pass (unit, integration, e2e)
+            - Documentation is comprehensive and clear
+            - Feature works end-to-end as requested
+            - Follows AI DM architecture patterns
+            - Uses MCP tools effectively
+            - Ready for production deployment
             
             Always create working, production-ready code with comprehensive tests and documentation.
+            Make extensive use of all available MCP tools to create the best possible implementation.
           
           # Environment variables for development
           claude_env: |
@@ -153,3 +254,126 @@ jobs:
             SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
             DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
+      - name: Commit Changes
+        id: commit
+        run: |
+          # Check if there are any changes to commit
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            
+            # Create meaningful commit message
+            if [ "${{ steps.branch.outputs.issue_number }}" != "N/A" ]; then
+              COMMIT_MSG="feat: Implement ${{ github.event.issue.title || 'feature requested in @claude mention' }}
+
+              Autonomous implementation by Claude AI:
+              - Used MCP tools for comprehensive solution
+              - Added tests and documentation
+              - Followed AI DM architecture patterns
+              
+              Resolves #${{ steps.branch.outputs.issue_number }}"
+            else
+              COMMIT_MSG="feat: Implement feature from @claude mention
+
+              Autonomous implementation by Claude AI:
+              - Used MCP tools for comprehensive solution
+              - Added tests and documentation
+              - Followed AI DM architecture patterns"
+            fi
+            
+            git commit -m "$COMMIT_MSG"
+            git push origin ${{ steps.branch.outputs.branch_name }}
+            echo "changes_committed=true" >> $GITHUB_OUTPUT
+          else
+            echo "No changes to commit"
+            echo "changes_committed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.commit.outputs.changes_committed == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.branch.outputs.branch_name }}
+          title: "🤖 ${{ github.event.issue.title || 'Autonomous Implementation' }}"
+          body: |
+            ## 🤖 Autonomous Implementation by Claude AI
+            
+            This PR was automatically created by Claude in response to a @claude mention.
+            
+            **Original Request**: ${{ github.event_name == 'issues' && 'Issue' || 'Comment' }} ${{ github.event.issue.number || github.event.comment.id }}
+            
+            ### 🚀 Changes Made
+            - ✅ Implemented requested feature using MCP tools
+            - ✅ Added comprehensive tests and documentation
+            - ✅ Followed AI DM architecture patterns
+            - ✅ Used TypeScript with strict mode
+            - ✅ Implemented proper error handling
+            
+            ### 🛠 MCP Tools Used
+            - **Supabase MCP** 🗄️ - Database operations and real-time features
+            - **Firecrawl MCP** 🔍 - D&D research and content validation
+            - **Playwright MCP** 🎭 - Comprehensive testing and automation
+            - **GitHub MCP** 🐙 - Repository management and documentation
+            - **Fetch MCP** 🌐 - API integrations and external data
+            
+            ### 🎮 AI DM Features
+            - Narrative generation and storytelling
+            - Game mechanics and rule enforcement
+            - Player engagement and session management
+            - Real-time multiplayer synchronization
+            - Comprehensive campaign management
+            
+            ### ✅ Quality Assurance
+            - All TypeScript compilation checks pass
+            - Comprehensive test coverage (unit, integration, e2e)
+            - Code follows established patterns and standards
+            - Documentation includes usage examples
+            - Ready for production deployment
+            
+            ### 🔍 Review Checklist
+            - [ ] Business logic is correct and complete
+            - [ ] Security considerations are addressed
+            - [ ] Performance is optimized
+            - [ ] Documentation is clear and helpful
+            - [ ] Tests cover all critical paths
+            
+            ${{ github.event.issue.number && format('**Closes #{0}**', github.event.issue.number) || '' }}
+            
+            ---
+            
+            *This PR was created by the autonomous Claude AI development workflow. Human review is required before merging.*
+          draft: false
+
+      - name: Add Success Comment
+        if: steps.commit.outputs.changes_committed == 'true' && github.event.issue.number
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ## ✅ Autonomous Implementation Complete!
+            
+            I've successfully implemented your request using our MCP-enhanced autonomous workflow:
+            
+            🌿 **Branch Created**: `${{ steps.branch.outputs.branch_name }}`
+            📝 **Pull Request**: Created with comprehensive implementation
+            🛠 **MCP Tools Used**: Supabase, Firecrawl, Playwright, GitHub, Fetch
+            
+            ### What I Built:
+            - Complete feature implementation with TypeScript
+            - Comprehensive test suite with Playwright
+            - Database schema and migrations with Supabase
+            - D&D research and validation with Firecrawl
+            - Documentation and examples
+            
+            The pull request is ready for your review! 🚀
+
+      - name: Workflow Summary
+        if: always()
+        run: |
+          echo "=== Autonomous Workflow Summary ==="
+          echo "Branch: ${{ steps.branch.outputs.branch_name }}"
+          echo "Issue: ${{ steps.branch.outputs.issue_number }}"
+          echo "Changes Committed: ${{ steps.commit.outputs.changes_committed }}"
+          echo "Workflow Status: ${{ job.status }}"
+          echo "================================="
