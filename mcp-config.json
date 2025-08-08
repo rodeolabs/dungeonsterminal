@@ -1,0 +1,71 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "github__list_files",
+        "github__read_file",
+        "github__create_issue",
+        "github__create_comment"
+      ]
+    },
+    "supabase": {
+      "command": "npx",
+      "args": ["@supabase/mcp-server-supabase"],
+      "env": {
+        "SUPABASE_URL": "${SUPABASE_URL}",
+        "SUPABASE_ANON_KEY": "${SUPABASE_ANON_KEY}",
+        "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "supabase__list_tables",
+        "supabase__execute_sql",
+        "supabase__get_project_url",
+        "supabase__generate_typescript_types"
+      ]
+    },
+    "firecrawl": {
+      "command": "npx",
+      "args": ["firecrawl-mcp"],
+      "env": {
+        "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "firecrawl__scrape",
+        "firecrawl__search",
+        "firecrawl__extract"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp"],
+      "env": {
+        "PLAYWRIGHT_BROWSERS_PATH": "/tmp/playwright"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "playwright__test",
+        "playwright__screenshot",
+        "playwright__performance"
+      ]
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["mcp-server-fetch"],
+      "env": {},
+      "disabled": false,
+      "autoApprove": [
+        "fetch__get",
+        "fetch__post",
+        "fetch__validate"
+      ]
+    }
+  }
+}
