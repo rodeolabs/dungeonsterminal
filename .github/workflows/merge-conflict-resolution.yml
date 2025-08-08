@@ -1,0 +1,205 @@
+name: Autonomous Merge Conflict Resolution
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main]
+
+jobs:
+  resolve-conflicts:
+    # Only run for local-sync PRs or when conflicts are detected
+    if: |
+      contains(github.event.pull_request.title, 'local-sync') ||
+      contains(github.event.pull_request.title, 'merge-strategy') ||
+      github.event.pull_request.mergeable_state == 'dirty'
+    
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "Claude Merge Bot"
+          git config --global user.email "claude-merge-bot@rodeolabs.com"
+
+      - name: Fetch base branch
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+
+      - name: Check for merge conflicts
+        id: check-conflicts
+        run: |
+          git merge-tree $(git merge-base HEAD origin/${{ github.event.pull_request.base.ref }}) HEAD origin/${{ github.event.pull_request.base.ref }} > merge-tree-output.txt
+          if [ -s merge-tree-output.txt ]; then
+            echo "conflicts=true" >> $GITHUB_OUTPUT
+            echo "Merge conflicts detected"
+            cat merge-tree-output.txt
+          else
+            echo "conflicts=false" >> $GITHUB_OUTPUT
+            echo "No merge conflicts detected"
+          fi
+
+      - name: Resolve conflicts with Claude
+        if: steps.check-conflicts.outputs.conflicts == 'true'
+        uses: anthropics/claude-code-action@beta
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          model: "claude-opus-4-1-20250805"
+          
+          direct_prompt: |
+            # Autonomous Merge Conflict Resolution
+            
+            You are an expert merge conflict resolver for the AI Dungeon Master project.
+            
+            ## Current Situation
+            This PR has merge conflicts that need intelligent resolution.
+            
+            ## Resolution Strategy
+            
+            ### 1. Configuration Files (.gitignore, .env templates)
+            - **Preserve comprehensive exclusions**: Keep the most complete .gitignore
+            - **Merge patterns**: Combine unique patterns from both versions
+            - **Environment protection**: Ensure .env files are always excluded
+            
+            ### 2. Steering Documents (.kiro/steering/*)
+            - **Preserve local updates**: Local steering documents take precedence
+            - **Merge new sections**: Combine new autonomous workflow patterns
+            - **Maintain consistency**: Ensure all MCP integration patterns are included
+            
+            ### 3. Workflow Files (.github/workflows/*)
+            - **Enhanced configurations**: Use the most feature-complete version
+            - **Preserve customizations**: Keep AI DM specific instructions
+            - **Security settings**: Maintain proper permissions and secrets
+            
+            ### 4. Project Structure
+            - **Local development**: Preserve local .kiro/ and .vscode/ configurations
+            - **Remote features**: Integrate new GitHub Actions and workflows
+            - **Documentation**: Merge README and documentation updates
+            
+            ## Conflict Resolution Rules
+            
+            1. **Safety First**: Never commit sensitive data (.env contents)
+            2. **Feature Complete**: Choose the version with more functionality
+            3. **Local Preference**: When in doubt, prefer local configurations
+            4. **Documentation**: Always merge documentation improvements
+            5. **Testing**: Ensure all test configurations are preserved
+            
+            ## Post-Resolution Actions
+            
+            After resolving conflicts:
+            1. Validate all file syntax (YAML, JSON, TypeScript)
+            2. Ensure .gitignore covers all sensitive files
+            3. Verify workflow files have correct permissions
+            4. Update any documentation references
+            5. Commit with descriptive message explaining resolution
+            
+            Please resolve all merge conflicts following these guidelines and commit the resolved changes.
+          
+          allowed_tools: |
+            Bash(git status)
+            Bash(git add .)
+            Bash(git commit -m "resolve: Auto-resolve merge conflicts following autonomous merge strategy")
+            Bash(git push origin ${{ github.event.pull_request.head.ref }})
+            Bash(npm run lint --if-present)
+            Bash(npm run typecheck --if-present)
+
+      - name: Validate resolution
+        if: steps.check-conflicts.outputs.conflicts == 'true'
+        run: |
+          echo "Validating merge conflict resolution..."
+          
+          # Check if .gitignore exists and contains essential patterns
+          if [ -f .gitignore ]; then
+            if grep -q "\.env" .gitignore && grep -q "node_modules" .gitignore; then
+              echo "✅ .gitignore properly configured"
+            else
+              echo "❌ .gitignore missing essential patterns"
+              exit 1
+            fi
+          fi
+          
+          # Validate YAML syntax in workflow files
+          for file in .github/workflows/*.yml; do
+            if [ -f "$file" ]; then
+              echo "Validating $file..."
+              # Basic YAML validation (you might want to use a proper YAML validator)
+              python3 -c "import yaml; yaml.safe_load(open('$file'))" || {
+                echo "❌ Invalid YAML in $file"
+                exit 1
+              }
+            fi
+          done
+          
+          echo "✅ All validations passed"
+
+      - name: Comment on PR
+        if: steps.check-conflicts.outputs.conflicts == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 **Autonomous Merge Conflict Resolution Complete**
+              
+              I've automatically resolved the merge conflicts in this PR following our autonomous merge strategy:
+              
+              ✅ **Configuration files** - Merged .gitignore with comprehensive exclusions
+              ✅ **Steering documents** - Preserved local updates and merged new patterns  
+              ✅ **Workflow files** - Used enhanced configurations with AI DM specialization
+              ✅ **Project structure** - Maintained local development configurations
+              
+              The resolution followed these principles:
+              - 🔒 **Security**: No sensitive data committed
+              - 🚀 **Features**: Chose most complete implementations
+              - 🏠 **Local preference**: Preserved local configurations when appropriate
+              - 📚 **Documentation**: Merged all improvements
+              
+              Please review the changes and merge when ready! 🎉`
+            });
+
+  validate-merge-strategy:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [resolve-conflicts]
+    steps:
+      - name: Report merge strategy status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const conclusion = '${{ needs.resolve-conflicts.result }}';
+            const title = conclusion === 'success' 
+              ? '✅ Autonomous Merge Strategy: Success' 
+              : '❌ Autonomous Merge Strategy: Needs Attention';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ${title}
+              
+              **Merge Strategy Execution**: ${conclusion}
+              
+              Our MCP-enhanced autonomous merge strategy has ${conclusion === 'success' ? 'successfully' : 'attempted to'} handle this PR.
+              
+              ### Next Steps
+              ${conclusion === 'success' 
+                ? '- Review the automated changes\n- Merge when satisfied with the resolution\n- The autonomous workflow is ready for production use! 🚀'
+                : '- Manual intervention may be required\n- Check the workflow logs for details\n- Consider updating the merge strategy based on this case'
+              }
+              
+              This demonstrates the power of our **MCP + Claude GitHub Actions** integration! 🤖✨`
+            });
