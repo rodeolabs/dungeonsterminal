@@ -37,7 +37,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # Only cache if package.json exists
+          cache: ${{ hashFiles('**/package-lock.json', '**/yarn.lock', '**/pnpm-lock.yaml') != '' && 'npm' || '' }}
 
       - name: Run Claude AI DM Agent
         id: claude-ai-dm
