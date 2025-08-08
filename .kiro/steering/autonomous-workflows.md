@@ -313,4 +313,69 @@ Use GitHub MCP to:
 ```
 
 >>>>>>> origin/feature/autonomous-merge-strategy
+## Troubleshooting Autonomous Workflows
+
+### Common Issues and Solutions
+
+#### 1. Claude Workflow Failures
+**Problem**: `@claude` mentions trigger workflows but they fail immediately
+**Symptoms**: 
+- Workflow runs for ~10 seconds then fails
+- Error: "Dependencies lock file is not found"
+- Missing package.json or npm lock files
+
+**Solution**: 
+```yaml
+# Fixed in claude.yml - conditional npm caching
+cache: ${{ hashFiles('**/package-lock.json', '**/yarn.lock', '**/pnpm-lock.yaml') != '' && 'npm' || '' }}
+```
+
+**Root Cause**: Optimized workflow assumed Node.js project structure exists
+
+#### 2. Workflow Triggers But No Response
+**Symptoms**:
+- Workflow shows "skipped" status
+- No Claude comments on issues
+- @claude mentions don't activate
+
+**Debugging Steps**:
+1. Check workflow run logs in Actions tab
+2. Verify `CLAUDE_CODE_OAUTH_TOKEN` secret exists
+3. Confirm @claude mention is in issue body or comment
+4. Check if workflow file syntax is valid
+
+#### 3. MCP Integration Issues
+**Problem**: Claude can't access MCP tools during autonomous development
+**Solution**: Ensure environment variables are properly configured in workflow:
+```yaml
+claude_env: |
+  NODE_ENV: development
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+```
+
+### Workflow Debugging Commands
+
+#### Check Workflow Status
+```bash
+# Using GitHub MCP
+mcp_github_list_workflow_runs(workflow_id="claude.yml")
+mcp_github_get_job_logs(run_id=<run_id>, failed_only=true)
+```
+
+#### Validate Workflow Syntax
+```bash
+# Local validation
+npx @github/workflow-validator .github/workflows/claude.yml
+```
+
+#### Test @claude Integration
+```markdown
+# Create test issue with:
+@claude Please create a simple "Hello World" example to test the autonomous workflow.
+
+# Expected: Claude creates branch, implements code, submits PR
+# If fails: Check workflow logs and apply fixes above
+```
+
 This autonomous workflow system enables rapid, high-quality development while maintaining human oversight for critical decisions and providing robust merge conflict resolution.
