@@ -6,26 +6,43 @@ on:
   pull_request_review_comment:
     types: [created]
   issues:
-    types: [opened, assigned]
+    types: [opened, assigned, edited]
   pull_request_review:
     types: [submitted]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      claude_prompt:
+        description: 'Custom prompt for Claude'
+        required: false
+        type: string
 
 jobs:
   claude-ai-dm:
+    # Simplified and more reliable trigger condition
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      contains(github.event.comment.body || github.event.issue.body || github.event.review.body || github.event.inputs.claude_prompt || 'auto', '@claude') ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     permissions:
+      # Comprehensive permissions for autonomous development
       contents: write
       pull-requests: write
       issues: write
+      discussions: write
       id-token: write
       actions: read
       checks: write
+      deployments: write
+      packages: read
+      pages: write
+      repository-projects: write
+      security-events: write
+      statuses: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,40 +57,120 @@ jobs:
           # Only cache if package.json exists
           cache: ${{ hashFiles('**/package-lock.json', '**/yarn.lock', '**/pnpm-lock.yaml') != '' && 'npm' || '' }}
 
+      - name: Setup MCP Environment
+        run: |
+          # Install Python and uv for MCP servers
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip curl
+          
+          # Install uv for Python package management
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          export PATH="$HOME/.cargo/bin:$PATH"
+          
+          # Verify installations
+          python3 --version
+          uv --version || echo "UV installation in progress"
+          
+          # Setup basic MCP configuration (Claude action handles server integration internally)
+          mkdir -p ~/.mcp
+          cat > ~/.mcp/config.json << 'EOF'
+          {
+            "mcpServers": {
+              "github": {
+                "command": "echo",
+                "args": ["GitHub MCP integration handled by Claude action"],
+                "env": {
+                  "GITHUB_PERSONAL_ACCESS_TOKEN": "${{ secrets.GITHUB_TOKEN }}"
+                }
+              }
+            }
+          }
+          EOF
+          
+          echo "MCP environment configured successfully"
+
       - name: Run Claude AI DM Agent
         id: claude-ai-dm
         uses: anthropics/claude-code-action@beta
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 
-          # Use Claude Opus for complex AI DM development
+          # Use Claude 4.0 for advanced AI DM development
           model: "claude-opus-4-1-20250805"
           
-          # Enhanced permissions for autonomous development
-          additional_permissions: |
-            actions: read
-            checks: write
-            contents: write
-            pull-requests: write
-            issues: write
-          
           # Maximum autonomous capabilities
-          max_turns: 10
-          timeout_minutes: 25
+          max_turns: 15
+          timeout_minutes: 40
           
-          # AI DM specific tools and commands
+          # Enable MCP integration
+          mcp_config_path: ~/.mcp/config.json
+          
+          # Comprehensive tool permissions for AI DM development
           allowed_tools: |
+            # Development and Build Tools
             Bash(npm install)
-            Bash(npm run build)
-            Bash(npm run test)
-            Bash(npm run test:unit)
-            Bash(npm run test:integration)
-            Bash(npm run test:e2e)
-            Bash(npm run lint)
-            Bash(npm run typecheck)
-            Bash(npx supabase gen types typescript)
-            Bash(npx prisma generate)
+            Bash(npm run *)
+            Bash(yarn install)
+            Bash(yarn run *)
+            Bash(pnpm install)
+            Bash(pnpm run *)
+            Bash(bun install)
+            Bash(bun run *)
+            
+            # Testing Tools
+            Bash(npm test)
+            Bash(npm run test:*)
+            Bash(jest *)
+            Bash(vitest *)
             Bash(npx playwright test)
+            Bash(npx cypress run)
+            
+            # TypeScript and Linting
+            Bash(npx tsc)
+            Bash(npx eslint *)
+            Bash(npx prettier *)
+            Bash(npm run typecheck)
+            Bash(npm run lint)
+            Bash(npm run format)
+            
+            # Database and ORM Tools
+            Bash(npx supabase *)
+            Bash(npx prisma *)
+            Bash(npx drizzle-kit *)
+            Bash(npm run db:*)
+            
+            # Git Operations
+            Bash(git add *)
+            Bash(git commit *)
+            Bash(git push *)
+            Bash(git checkout *)
+            Bash(git branch *)
+            Bash(git merge *)
+            
+            # File Operations
+            Bash(mkdir *)
+            Bash(touch *)
+            Bash(cp *)
+            Bash(mv *)
+            Bash(rm *)
+            
+            # MCP Server Tools
+            mcp__github__*
+            mcp__supabase__*
+            mcp__firecrawl__*
+            mcp__playwright__*
+            mcp__fetch__*
+            
+            # GitHub API Tools
+            github__create_pull_request
+            github__create_issue
+            github__update_issue
+            github__create_comment
+            github__list_files
+            github__read_file
+            github__write_file
+            github__delete_file
           
           # Comprehensive AI DM development instructions
           custom_instructions: |
@@ -146,10 +243,36 @@ jobs:
             
             Always create working, production-ready code with comprehensive tests and documentation.
           
-          # Environment variables for development
+          # Custom prompt for workflow dispatch
+          prompt: ${{ github.event.inputs.claude_prompt || '' }}
+          
+          # Environment variables for development and MCP integration
           claude_env: |
             NODE_ENV: development
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
             SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+            SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
             DATABASE_URL: ${{ secrets.DATABASE_URL }}
+            FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+            OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+            ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+            MCP_CONFIG_PATH: ~/.mcp/config.json
+            
+      - name: Post-execution cleanup
+        if: always()
+        run: |
+          # Clean up any temporary files or processes
+          pkill -f "mcp-server" || true
+          rm -rf /tmp/playwright || true
+          
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-execution-logs
+          path: |
+            ~/.mcp/logs/
+            /tmp/claude-logs/
+          retention-days: 7
 
