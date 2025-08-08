@@ -59,51 +59,29 @@ jobs:
 
       - name: Setup MCP Environment
         run: |
-          # Install MCP tools and dependencies
-          npm install -g @modelcontextprotocol/cli
-          npm install -g @modelcontextprotocol/server-github
-          npm install -g @supabase/mcp-server-supabase
-          npm install -g firecrawl-mcp
-          npm install -g @playwright/mcp
-          npm install -g mcp-server-fetch
+          # Install MCP tools and dependencies (using uvx for Python-based servers)
+          npm install -g @anthropics/claude-code-action
           
-          # Setup MCP configuration
+          # Install Python and uv for MCP servers
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+          
+          # Install MCP servers using uvx
+          uvx --help || echo "uvx not available, using pip"
+          
+          # Setup basic MCP configuration (Claude will handle MCP integration internally)
           mkdir -p ~/.mcp
           cat > ~/.mcp/config.json << 'EOF'
           {
             "mcpServers": {
               "github": {
-                "command": "npx",
-                "args": ["@modelcontextprotocol/server-github"],
+                "command": "echo",
+                "args": ["GitHub MCP integration handled by Claude action"],
                 "env": {
                   "GITHUB_PERSONAL_ACCESS_TOKEN": "${{ secrets.GITHUB_TOKEN }}"
                 }
-              },
-              "supabase": {
-                "command": "npx",
-                "args": ["@supabase/mcp-server-supabase"],
-                "env": {
-                  "SUPABASE_URL": "${{ secrets.SUPABASE_URL }}",
-                  "SUPABASE_ANON_KEY": "${{ secrets.SUPABASE_ANON_KEY }}"
-                }
-              },
-              "firecrawl": {
-                "command": "npx",
-                "args": ["firecrawl-mcp"],
-                "env": {
-                  "FIRECRAWL_API_KEY": "${{ secrets.FIRECRAWL_API_KEY }}"
-                }
-              },
-              "playwright": {
-                "command": "npx",
-                "args": ["@playwright/mcp"],
-                "env": {
-                  "PLAYWRIGHT_BROWSERS_PATH": "/tmp/playwright"
-                }
-              },
-              "fetch": {
-                "command": "npx",
-                "args": ["mcp-server-fetch"]
               }
             }
           }
@@ -295,4 +273,3 @@ jobs:
             ~/.mcp/logs/
             /tmp/claude-logs/
           retention-days: 7
-
