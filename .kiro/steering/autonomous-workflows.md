@@ -140,41 +140,6 @@ playwright:
 - **API integrations** - Review external service usage
 - **Performance-critical code** - Benchmark validation
 
-## Monitoring and Optimization
-
-### Autonomous Workflow Metrics
-- **Success rate** - Percentage of @claude requests completed successfully
-- **Review time** - Time from PR creation to human approval
-- **Test coverage** - Automated test coverage of AI-generated code
-- **MCP tool usage** - Efficiency of tool combinations
-
-### Continuous Improvement
-- **Feedback loops** - Learn from human PR reviews
-- **Pattern recognition** - Identify successful workflow patterns
-- **Tool optimization** - Improve MCP tool integration efficiency
-- **Documentation updates** - Keep CLAUDE.md current with learnings
-
-## Integration with AI DM Development
-
-### Campaign Management Workflows
-```
-"@claude Create a new campaign management system"
-→ Research existing TTRPG campaign tools
-→ Design database schema for campaigns, sessions, NPCs
-→ Implement real-time collaboration features
-→ Create DM dashboard with campaign analytics
-→ Generate comprehensive documentation
-```
-
-### Procedural Content Generation
-```
-"@claude Implement dynamic quest generation"
-→ Research quest structure patterns
-→ Create quest template system in database
-→ Implement procedural generation algorithms
-→ Add player choice tracking and consequences
-→ Create testing framework for quest quality
-```
 
 ## Local-Remote Merge Strategy
 
@@ -309,4 +274,43 @@ Use GitHub MCP to:
 - Restore previous working state
 - Document recovery actions for future reference
 
+<<<<<<< HEAD
+=======
+## Monitoring and Optimization
+
+### Autonomous Workflow Metrics
+- **Success rate** - Percentage of @claude requests completed successfully
+- **Review time** - Time from PR creation to human approval
+- **Test coverage** - Automated test coverage of AI-generated code
+- **MCP tool usage** - Efficiency of tool combinations
+
+### Continuous Improvement
+- **Feedback loops** - Learn from human PR reviews
+- **Pattern recognition** - Identify successful workflow patterns
+- **Tool optimization** - Improve MCP tool integration efficiency
+- **Documentation updates** - Keep CLAUDE.md current with learnings
+
+## Integration with AI DM Development
+
+### Campaign Management Workflows
+```
+"@claude Create a new campaign management system"
+→ Research existing TTRPG campaign tools
+→ Design database schema for campaigns, sessions, NPCs
+→ Implement real-time collaboration features
+→ Create DM dashboard with campaign analytics
+→ Generate comprehensive documentation
+```
+
+### Procedural Content Generation
+```
+"@claude Implement dynamic quest generation"
+→ Research quest structure patterns
+→ Create quest template system in database
+→ Implement procedural generation algorithms
+→ Add player choice tracking and consequences
+→ Create testing framework for quest quality
+```
+
+>>>>>>> origin/feature/autonomous-merge-strategy
 This autonomous workflow system enables rapid, high-quality development while maintaining human oversight for critical decisions and providing robust merge conflict resolution.
