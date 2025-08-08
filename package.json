@@ -1,0 +1,21 @@
+{
+  "name": "hello-ai-dungeon-master",
+  "version": "1.0.0",
+  "description": "A simple Hello World project to test Claude workflow",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "hello-world",
+    "ai",
+    "dungeon-master",
+    "test"
+  ],
+  "author": "Claude AI",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
