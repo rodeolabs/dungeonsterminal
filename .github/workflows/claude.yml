@@ -57,9 +57,9 @@ jobs:
           # Only cache if package.json exists
           cache: ${{ hashFiles('**/package-lock.json', '**/yarn.lock', '**/pnpm-lock.yaml') != '' && 'npm' || '' }}
 
-      - name: Setup Python and UV for MCP Servers
+      - name: Setup MCP Environment
         run: |
-          # Install Python and uv for MCP servers (if needed)
+          # Install Python and uv for MCP servers
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip
           
@@ -69,54 +69,48 @@ jobs:
           
           # Verify installations
           python3 --version
-          pip3 --version
+          which uv || echo "UV not in PATH yet"
           
-          echo "Python and UV setup completed"
-
-      - name: Setup MCP Configuration
-        run: |
-          # Create MCP configuration directory
+          # Setup MCP configuration (Claude action will handle MCP server integration)
           mkdir -p ~/.mcp
-          
-          # Create basic MCP configuration (Claude action will handle MCP integration)
           cat > ~/.mcp/config.json << 'EOF'
           {
             "mcpServers": {
               "github": {
-                "command": "echo",
-                "args": ["GitHub MCP integration handled by Claude action"],
+                "command": "uvx",
+                "args": ["mcp-server-github"],
                 "env": {
                   "GITHUB_PERSONAL_ACCESS_TOKEN": "${{ secrets.GITHUB_TOKEN }}"
                 }
               },
               "supabase": {
-                "command": "echo", 
-                "args": ["Supabase MCP integration handled by Claude action"],
+                "command": "uvx",
+                "args": ["mcp-server-supabase"],
                 "env": {
                   "SUPABASE_URL": "${{ secrets.SUPABASE_URL }}",
                   "SUPABASE_ANON_KEY": "${{ secrets.SUPABASE_ANON_KEY }}"
                 }
               },
               "firecrawl": {
-                "command": "echo",
-                "args": ["Firecrawl MCP integration handled by Claude action"],
+                "command": "uvx",
+                "args": ["mcp-server-firecrawl"],
                 "env": {
                   "FIRECRAWL_API_KEY": "${{ secrets.FIRECRAWL_API_KEY }}"
                 }
               },
               "playwright": {
-                "command": "echo",
-                "args": ["Playwright MCP integration handled by Claude action"]
+                "command": "uvx",
+                "args": ["mcp-server-playwright"]
               },
               "fetch": {
-                "command": "echo",
-                "args": ["Fetch MCP integration handled by Claude action"]
+                "command": "uvx",
+                "args": ["mcp-server-fetch"]
               }
             }
           }
           EOF
           
-          echo "MCP configuration created successfully"
+          echo "MCP environment configured successfully"
 
       - name: Run Claude AI DM Agent
         id: claude-ai-dm
@@ -184,7 +178,7 @@ jobs:
             Bash(mv *)
             Bash(rm *)
             
-            # MCP Server Tools (handled by Claude action)
+            # MCP Server Tools
             mcp__github__*
             mcp__supabase__*
             mcp__firecrawl__*
