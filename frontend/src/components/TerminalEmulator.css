@@ -1,0 +1,303 @@
+/* Terminal Emulator Styles */
+
+.terminal-emulator {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  position: relative;
+}
+
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.terminal-title {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.terminal-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.terminal-button {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.terminal-button:hover {
+  opacity: 0.8;
+}
+
+.terminal-button.close {
+  background: #ff5f57;
+}
+
+.terminal-button.minimize {
+  background: #ffbd2e;
+}
+
+.terminal-button.maximize {
+  background: #28ca42;
+}
+
+.terminal-content {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  cursor: text;
+  line-height: 1.4;
+}
+
+.terminal-output {
+  margin-bottom: 16px;
+}
+
+.output-line {
+  margin-bottom: 4px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.output-line.output-narrative {
+  margin-bottom: 8px;
+  padding-left: 8px;
+  border-left: 2px solid currentColor;
+  opacity: 0.9;
+}
+
+.output-line.output-dialogue {
+  font-style: italic;
+  padding-left: 16px;
+  position: relative;
+}
+
+.output-line.output-dialogue::before {
+  content: '"';
+  position: absolute;
+  left: 8px;
+  opacity: 0.6;
+}
+
+.output-line.output-dialogue::after {
+  content: '"';
+  opacity: 0.6;
+}
+
+.output-line.output-system {
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+.output-line.output-error {
+  font-weight: bold;
+  animation: shake 0.5s ease-in-out;
+}
+
+.output-line.output-success {
+  font-weight: bold;
+}
+
+.output-line.output-combat {
+  font-weight: bold;
+  text-shadow: 0 0 4px currentColor;
+}
+
+.output-line.output-help {
+  opacity: 0.8;
+  font-size: 0.9em;
+  line-height: 1.6;
+}
+
+.terminal-input-line {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.terminal-prompt {
+  margin-right: 8px;
+  font-weight: bold;
+  user-select: none;
+}
+
+.terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  caret-color: transparent; /* Hide default caret */
+}
+
+.terminal-input::placeholder {
+  opacity: 0.5;
+  font-style: italic;
+}
+
+.terminal-input:disabled {
+  opacity: 0.6;
+}
+
+.terminal-cursor {
+  width: 2px;
+  height: 1.2em;
+  margin-left: 2px;
+  animation: blink 1s infinite;
+  transition: all 0.2s;
+}
+
+.terminal-cursor.processing {
+  animation: pulse 0.8s infinite;
+  opacity: 0.6;
+}
+
+/* Scrollbar styling */
+.terminal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.terminal-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.terminal-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.terminal-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .terminal-emulator {
+    border-radius: 0;
+  }
+  
+  .terminal-content {
+    padding: 12px;
+  }
+  
+  .terminal-header {
+    padding: 6px 12px;
+  }
+  
+  .terminal-title {
+    font-size: 11px;
+  }
+  
+  .terminal-button {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .terminal-emulator {
+    border: 2px solid currentColor;
+  }
+  
+  .terminal-header {
+    border-bottom: 2px solid currentColor;
+  }
+  
+  .output-line.output-narrative {
+    border-left-width: 3px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .output-line {
+    animation: none;
+  }
+  
+  .terminal-cursor {
+    animation: none;
+    opacity: 1;
+  }
+  
+  .output-line.output-error {
+    animation: none;
+  }
+}
+
+/* Focus styles for accessibility */
+.terminal-input:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Selection styles */
+.terminal-content ::selection {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.terminal-content ::-moz-selection {
+  background: rgba(255, 255, 255, 0.2);
+}
